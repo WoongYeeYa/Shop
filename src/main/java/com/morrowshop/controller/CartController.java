@@ -1,0 +1,11 @@
+package com.morrowshop.controller;
+import com.morrowshop.domain.*;import com.morrowshop.service.CartService;import java.io.*;import java.util.List;import javax.servlet.*;import javax.servlet.annotation.WebServlet;import javax.servlet.http.*;
+@WebServlet(name="cartController",urlPatterns={"/account/cart","/account/cart/api"})
+public class CartController extends HttpServlet{
+ private final CartService service=new CartService();
+ protected void doGet(HttpServletRequest req,HttpServletResponse res)throws ServletException,IOException{long userId=user(req).getId();List<CartLine> lines=service.get(userId);if(req.getServletPath().endsWith("/api")){json(res,true,service.count(lines),null);return;}req.setAttribute("lines",lines);req.setAttribute("total",service.total(lines));req.getRequestDispatcher("/WEB-INF/views/cart.jsp").forward(req,res);}
+ protected void doPost(HttpServletRequest req,HttpServletResponse res)throws IOException{try{long userId=user(req).getId();long productId=Long.parseLong(req.getParameter("productId"));String action=req.getParameter("action");int quantity=Integer.parseInt(req.getParameter("quantity")==null?"1":req.getParameter("quantity"));if("add".equals(action))service.add(userId,productId,quantity);else if("update".equals(action))service.update(userId,productId,quantity);else if("remove".equals(action))service.remove(userId,productId);else throw new IllegalArgumentException("지원하지 않는 요청입니다.");json(res,true,service.count(service.get(userId)),null);}catch(IllegalArgumentException e){res.setStatus(400);json(res,false,0,e.getMessage());}catch(RuntimeException e){getServletContext().log("Cart operation failed",e);res.setStatus(500);json(res,false,0,"장바구니 처리 중 문제가 발생했습니다.");}}
+ private SessionUser user(HttpServletRequest r){return(SessionUser)r.getSession().getAttribute("loginUser");}
+ private void json(HttpServletResponse r,boolean ok,int count,String message)throws IOException{r.setContentType("application/json;charset=UTF-8");r.getWriter().write("{\"success\":"+ok+",\"count\":"+count+",\"message\":"+(message==null?"null":"\""+escape(message)+"\"")+"}");}
+ private String escape(String s){return s.replace("\\","\\\\").replace("\"","\\\"").replace("\n","\\n");}
+}

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.morrowshop.mapper.ProductMapper">
+  <select id="findActive" resultType="Product">
+    SELECT id, sku, name, description, price, stock, category, image_url, featured
+    FROM products
+    WHERE active = TRUE
+    <if test="keyword != null">
+      AND (name LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))
+    </if>
+    <if test="category != null">
+      AND category = #{category}
+    </if>
+    ORDER BY featured DESC, created_at DESC
+  </select>
+  <select id="findActiveById" resultType="Product">
+    SELECT id, sku, name, description, price, stock, category, image_url, featured
+    FROM products WHERE id = #{id} AND active = TRUE
+  </select>
+  <select id="findCategories" resultType="string">
+    SELECT DISTINCT category FROM products WHERE active = TRUE ORDER BY category
+  </select>
+  <select id="findAllAdmin" resultType="Product">SELECT id,sku,name,description,price,stock,category,image_url,featured,active FROM products ORDER BY created_at DESC</select>
+  <select id="findByIdAdmin" resultType="Product">SELECT id,sku,name,description,price,stock,category,image_url,featured,active FROM products WHERE id=#{id}</select>
+  <insert id="insert" parameterType="Product" useGeneratedKeys="true" keyProperty="id">INSERT INTO products(sku,name,description,price,stock,category,image_url,featured,active) VALUES(#{sku},#{name},#{description},#{price},#{stock},#{category},#{imageUrl},#{featured},TRUE)</insert>
+  <update id="update" parameterType="Product">UPDATE products SET sku=#{sku},name=#{name},description=#{description},price=#{price},stock=#{stock},category=#{category},image_url=#{imageUrl},featured=#{featured} WHERE id=#{id}</update>
+  <update id="softDelete">UPDATE products SET active=FALSE WHERE id=#{id}</update>
+</mapper>
