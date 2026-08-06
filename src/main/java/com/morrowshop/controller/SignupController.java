@@ -2,6 +2,7 @@ package com.morrowshop.controller;
 
 import com.morrowshop.domain.SessionUser;
 import com.morrowshop.service.AuthService;
+import com.morrowshop.service.impl.AuthServiceImpl;
 import com.morrowshop.service.DuplicateEmailException;
 import java.io.IOException;
 import java.util.regex.Pattern;
@@ -12,7 +13,7 @@ import javax.servlet.http.*;
 @WebServlet(name = "signupController", urlPatterns = "/signup")
 public class SignupController extends HttpServlet {
     private static final Pattern EMAIL = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
-    private final AuthService authService = new AuthService();
+    private final AuthService authService = new AuthServiceImpl();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)

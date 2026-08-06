@@ -1,6 +1,7 @@
 package com.morrowshop.controller;
 
 import com.morrowshop.service.ProductService;
+import com.morrowshop.service.impl.ProductServiceImpl;
 import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -10,7 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 @WebServlet(name = "homeController", urlPatterns = {"", "/products"})
 public class HomeController extends HttpServlet {
-    private final ProductService productService = new ProductService();
+    private final ProductService productService = new ProductServiceImpl();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)

@@ -1,10 +1,14 @@
 package com.morrowshop.service;
-import com.morrowshop.config.MyBatisProvider;import com.morrowshop.domain.*;import com.morrowshop.mapper.CartMapper;import java.math.BigDecimal;import java.util.List;import org.apache.ibatis.session.SqlSession;
-public class CartService {
- public List<CartLine> get(long userId){try(SqlSession s=MyBatisProvider.getFactory().openSession()){return s.getMapper(CartMapper.class).findByUser(userId);}}
- public void add(long userId,long productId,int quantity){if(quantity<1||quantity>99)throw new IllegalArgumentException("수량은 1개 이상 99개 이하여야 합니다.");try(SqlSession s=MyBatisProvider.getFactory().openSession(false)){CartMapper cart=s.getMapper(CartMapper.class);List<CartLine> lines=cart.findByUserForUpdate(userId);Product p=s.getMapper(com.morrowshop.mapper.ProductMapper.class).findActiveById(productId);int current=0;for(CartLine line:lines)if(line.getProductId()==productId)current=line.getQuantity();if(p==null||current+quantity>p.getStock()||current+quantity>99)throw new IllegalArgumentException("상품 재고가 부족합니다.");cart.upsert(userId,productId,quantity);s.commit();}}
- public void update(long userId,long productId,int quantity){if(quantity<1){remove(userId,productId);return;}try(SqlSession s=MyBatisProvider.getFactory().openSession(false)){CartMapper cart=s.getMapper(CartMapper.class);cart.findByUserForUpdate(userId);Product p=s.getMapper(com.morrowshop.mapper.ProductMapper.class).findActiveById(productId);if(p==null||p.getStock()<quantity||quantity>99)throw new IllegalArgumentException("선택한 수량만큼 재고가 없습니다.");cart.update(userId,productId,quantity);s.commit();}}
- public void remove(long userId,long productId){try(SqlSession s=MyBatisProvider.getFactory().openSession(false)){s.getMapper(CartMapper.class).delete(userId,productId);s.commit();}}
- public BigDecimal total(List<CartLine> lines){BigDecimal total=BigDecimal.ZERO;for(CartLine line:lines)total=total.add(line.getSubtotal());return total;}
- public int count(List<CartLine> lines){int count=0;for(CartLine line:lines)count+=line.getQuantity();return count;}
+
+import com.morrowshop.domain.CartLine;
+import java.math.BigDecimal;
+import java.util.List;
+
+public interface CartService {
+    List<CartLine> get(long userId);
+    void add(long userId, long productId, int quantity);
+    void update(long userId, long productId, int quantity);
+    void remove(long userId, long productId);
+    BigDecimal total(List<CartLine> lines);
+    int count(List<CartLine> lines);
 }

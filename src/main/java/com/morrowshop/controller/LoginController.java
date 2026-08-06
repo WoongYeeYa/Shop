@@ -2,6 +2,7 @@ package com.morrowshop.controller;
 
 import com.morrowshop.domain.SessionUser;
 import com.morrowshop.service.AuthService;
+import com.morrowshop.service.impl.AuthServiceImpl;
 import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -12,7 +13,7 @@ import javax.servlet.http.HttpSession;
 
 @WebServlet(name = "loginController", urlPatterns = "/login")
 public class LoginController extends HttpServlet {
-    private final AuthService authService = new AuthService();
+    private final AuthService authService = new AuthServiceImpl();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
