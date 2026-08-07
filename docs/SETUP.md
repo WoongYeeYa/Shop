@@ -2,12 +2,12 @@
 
 ## 필수 도구
 
-- JDK 8 이상 (`JAVA_HOME` 설정)
+- JDK 17 (`JAVA_HOME` 설정)
 - Maven 3.9 이상
 - MySQL 8
 - Tomcat 9
 
-현재 확인된 로컬 환경에는 Java 8만 있고 Maven과 Git은 PATH에 없다.
+프로젝트는 Java 17로 컴파일한다. 저장소의 `.tools`에 휴대용 JDK/Maven이 있으면 빌드 스크립트가 이를 우선 사용하고, 없으면 PATH에 설정된 도구를 사용한다.
 
 ## DB 준비
 
@@ -29,6 +29,6 @@ GRANT ALL PRIVILEGES ON morrow_shop.* TO 'morrow'@'localhost';
 mvn clean test package
 ```
 
-Windows에서는 `powershell -ExecutionPolicy Bypass -File scripts/build.ps1`로도 빌드할 수 있다. 프로젝트 내부 휴대용 도구가 있으면 우선 사용하고, 없으면 PATH의 Maven을 사용한다.
+Windows에서는 실행 정책의 영향을 받지 않는 `scripts\build.cmd`를 권장한다. PowerShell에서는 `powershell -ExecutionPolicy Bypass -File scripts/build.ps1`도 사용할 수 있다.
 
 WAR를 Tomcat 9 `webapps`에 배포한다. 운영 비밀번호와 `.env` 파일은 커밋하지 않는다.
