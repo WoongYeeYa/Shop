@@ -34,6 +34,10 @@ MySQL 스키마와 샘플 상품은 최초 실행 시 자동으로 생성됩니�
 `http://localhost:8080/morrow-shop/`에 접속합니다. 비밀번호와 포트를 바꾸려면
 `.env.example`을 `.env`로 복사한 뒤 값을 수정합니다.
 
+Docker MySQL은 기본적으로 호스트의 `3307` 포트에 연결됩니다. DBeaver에서는
+호스트 `localhost`, 포트 `3307`, 데이터베이스 `morrow_shop`, 사용자 `morrow`를
+사용합니다.
+
 ```bash
 docker compose down
 ```
