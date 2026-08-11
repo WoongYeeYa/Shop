@@ -12,15 +12,15 @@
 ## DB 준비
 
 ```sql
-CREATE DATABASE morrow_shop CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'morrow'@'localhost' IDENTIFIED BY 'local-password';
-GRANT ALL PRIVILEGES ON morrow_shop.* TO 'morrow'@'localhost';
+CREATE DATABASE my_shop CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'myshop'@'localhost' IDENTIFIED BY 'local-password';
+GRANT ALL PRIVILEGES ON my_shop.* TO 'myshop'@'localhost';
 ```
 
 `src/main/resources/db/schema.sql`을 실행한 후 Tomcat 실행 환경에 다음 값을 설정한다.
 
-- `DB_URL` (기본값 `jdbc:mysql://localhost:3306/morrow_shop?...`)
-- `DB_USERNAME` (기본값 `morrow`)
+- `DB_URL` (기본값 `jdbc:mysql://localhost:3306/my_shop?...`)
+- `DB_USERNAME` (기본값 `myshop`)
 - `DB_PASSWORD` (기본값 없음, 로컬에서도 환경 변수 사용 권장)
 
 ## 실행

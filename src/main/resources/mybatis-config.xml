@@ -2,7 +2,7 @@
 <!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "https://mybatis.org/dtd/mybatis-3-config.dtd">
 <configuration>
   <settings><setting name="mapUnderscoreToCamelCase" value="true"/></settings>
-  <typeAliases><package name="com.morrowshop.domain"/></typeAliases>
+  <typeAliases><package name="com.myshop.domain"/></typeAliases>
   <mappers>
     <mapper resource="mapper/ProductMapper.xml"/>
     <mapper resource="mapper/UserMapper.xml"/>

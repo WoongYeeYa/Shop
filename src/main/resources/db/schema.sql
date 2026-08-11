@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS products (
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CHECK (price >= 0)
+  CONSTRAINT chk_product_price CHECK (price >= 0),
+  CONSTRAINT chk_product_stock CHECK (stock >= 0)
 );
 
 CREATE TABLE IF NOT EXISTS cart_items (
@@ -30,7 +31,8 @@ CREATE TABLE IF NOT EXISTS cart_items (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (user_id, product_id),
   CONSTRAINT fk_cart_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  CONSTRAINT fk_cart_product FOREIGN KEY (product_id) REFERENCES products(id)
+  CONSTRAINT fk_cart_product FOREIGN KEY (product_id) REFERENCES products(id),
+  CONSTRAINT chk_cart_quantity CHECK (quantity > 0)
 );
 
 CREATE TABLE IF NOT EXISTS orders (
@@ -40,7 +42,9 @@ CREATE TABLE IF NOT EXISTS orders (
   status ENUM('PENDING', 'PAID', 'CANCELLED') NOT NULL DEFAULT 'PENDING',
   total_amount DECIMAL(12,2) NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES users(id)
+  CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES users(id),
+  CONSTRAINT chk_order_total CHECK (total_amount >= 0),
+  INDEX idx_orders_user_created (user_id, created_at)
 );
 
 CREATE TABLE IF NOT EXISTS order_items (
@@ -50,8 +54,10 @@ CREATE TABLE IF NOT EXISTS order_items (
   product_name VARCHAR(120) NOT NULL,
   unit_price DECIMAL(12,2) NOT NULL,
   quantity INT NOT NULL,
-  CONSTRAINT fk_item_order FOREIGN KEY (order_id) REFERENCES orders(id),
-  CONSTRAINT fk_item_product FOREIGN KEY (product_id) REFERENCES products(id)
+  CONSTRAINT fk_item_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  CONSTRAINT fk_item_product FOREIGN KEY (product_id) REFERENCES products(id),
+  CONSTRAINT chk_order_item_price CHECK (unit_price >= 0),
+  CONSTRAINT chk_order_item_quantity CHECK (quantity > 0)
 );
 
 INSERT INTO products (sku, name, description, price, stock, category, image_url, featured) VALUES

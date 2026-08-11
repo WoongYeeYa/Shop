@@ -1,4 +1,4 @@
-# Morrow Shop
+# My Shop
 
 JSP/Servlet MVC와 순수 JavaScript를 함께 보여 주는 포트폴리오용 쇼핑몰입니다.
 
@@ -19,8 +19,8 @@ JSP/Servlet MVC와 순수 JavaScript를 함께 보여 주는 포트폴리오용 
 
 1. `docs/SETUP.md`에 따라 DB와 환경 변수를 준비합니다.
 2. Windows에서는 `scripts\build.cmd`, 그 외 환경에서는 `mvn clean package`를 실행합니다.
-3. 생성된 `target/morrow-shop.war`를 Tomcat 9에 배포합니다.
-4. `http://localhost:8080/morrow-shop/`에 접속합니다.
+3. 생성된 `target/my-shop.war`를 Tomcat 9에 배포합니다.
+4. `http://localhost:8080/my-shop/`에 접속합니다.
 
 ## Docker로 실행
 
@@ -31,11 +31,11 @@ docker compose up --build
 ```
 
 MySQL 스키마와 샘플 상품은 최초 실행 시 자동으로 생성됩니다. 준비가 끝나면
-`http://localhost:8080/morrow-shop/`에 접속합니다. 비밀번호와 포트를 바꾸려면
+`http://localhost:8080/my-shop/`에 접속합니다. 비밀번호와 포트를 바꾸려면
 `.env.example`을 `.env`로 복사한 뒤 값을 수정합니다.
 
 Docker MySQL은 기본적으로 호스트의 `3307` 포트에 연결됩니다. DBeaver에서는
-호스트 `localhost`, 포트 `3307`, 데이터베이스 `morrow_shop`, 사용자 `morrow`를
+호스트 `localhost`, 포트 `3307`, 데이터베이스 `my_shop`, 사용자 `myshop`를
 사용합니다.
 
 ```bash

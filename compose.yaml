@@ -1,11 +1,13 @@
+name: my-shop
+
 services:
   db:
     image: mysql:8.4
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: morrow_shop
-      MYSQL_USER: morrow
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-morrow-local-password}
+      MYSQL_DATABASE: my_shop
+      MYSQL_USER: myshop
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-myshop-local-password}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-local-password}
       TZ: Asia/Seoul
     command:
@@ -29,9 +31,9 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      DB_URL: jdbc:mysql://db:3306/morrow_shop?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
-      DB_USERNAME: morrow
-      DB_PASSWORD: ${MYSQL_PASSWORD:-morrow-local-password}
+      DB_URL: jdbc:mysql://db:3306/my_shop?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      DB_USERNAME: myshop
+      DB_PASSWORD: ${MYSQL_PASSWORD:-myshop-local-password}
       TZ: Asia/Seoul
     ports:
       - "${APP_PORT:-8080}:8080"
