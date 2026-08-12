@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS order_items (
 );
 
 INSERT INTO products (sku, name, description, price, stock, category, image_url, featured) VALUES
-('LIVING-001', 'Arc Table Lamp', '부드러운 곡선과 따뜻한 빛을 담은 테이블 램프', 89000, 18, 'Living', 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=900&q=80', TRUE),
-('KITCHEN-001', 'Sunday Mug Set', '매일 손이 가는 차분한 질감의 머그 두 개', 42000, 32, 'Kitchen', 'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&w=900&q=80', TRUE),
-('STATIONERY-001', 'Field Notes', '생각을 가볍게 붙잡아 두는 패브릭 노트', 18000, 50, 'Stationery', 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=900&q=80', FALSE)
-ON DUPLICATE KEY UPDATE name = VALUES(name);
+('LIVING-001', '아크 테이블 램프', '부드러운 곡선과 따뜻한 빛을 담은 테이블 램프', 89000, 18, '생활', 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=900&q=80', TRUE),
+('KITCHEN-001', '선데이 머그 세트', '매일 손이 가는 차분한 질감의 머그 두 개', 42000, 32, '주방', 'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&w=900&q=80', TRUE),
+('STATIONERY-001', '패브릭 기록 노트', '생각을 가볍게 붙잡아 두는 패브릭 노트', 18000, 50, '문구', 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=900&q=80', FALSE)
+ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description), category = VALUES(category);
