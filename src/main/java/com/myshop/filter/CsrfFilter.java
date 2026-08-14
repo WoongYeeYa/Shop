@@ -17,7 +17,6 @@ public class CsrfFilter implements Filter {
             throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse response = (HttpServletResponse) servletResponse;
-        request.setCharacterEncoding("UTF-8");
         if (request.getRequestURI().startsWith(request.getContextPath() + "/assets/")) {
             chain.doFilter(request, response);
             return;

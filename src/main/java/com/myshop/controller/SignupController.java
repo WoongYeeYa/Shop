@@ -24,10 +24,10 @@ public class SignupController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String name = value(request, "name");
-        String email = value(request, "email");
-        String password = rawValue(request, "password");
-        String passwordConfirm = rawValue(request, "passwordConfirm");
+        String name = ControllerSupport.value(request, "name");
+        String email = ControllerSupport.value(request, "email");
+        String password = ControllerSupport.rawValue(request, "password");
+        String passwordConfirm = ControllerSupport.rawValue(request, "passwordConfirm");
         request.setAttribute("name", name);
         request.setAttribute("email", email);
         String error = validate(name, email, password, passwordConfirm);
@@ -60,13 +60,5 @@ public class SignupController extends HttpServlet {
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         request.setAttribute("error", message);
         request.getRequestDispatcher("/WEB-INF/views/auth/signup.jsp").forward(request, response);
-    }
-    private String value(HttpServletRequest request, String name) {
-        String value = request.getParameter(name);
-        return value == null ? "" : value.trim();
-    }
-    private String rawValue(HttpServletRequest request, String name) {
-        String value = request.getParameter(name);
-        return value == null ? "" : value;
     }
 }

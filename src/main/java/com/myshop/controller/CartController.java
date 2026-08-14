@@ -1,7 +1,6 @@
 package com.myshop.controller;
 
 import com.myshop.domain.CartLine;
-import com.myshop.domain.SessionUser;
 import com.myshop.service.CartService;
 import com.myshop.service.impl.CartServiceImpl;
 import java.io.IOException;
@@ -19,7 +18,7 @@ public class CartController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        long userId = user(request).getId();
+        long userId = ControllerSupport.user(request).getId();
         List<CartLine> lines = service.get(userId);
         if (request.getServletPath().endsWith("/api")) {
             json(response, true, service.count(lines), null);
@@ -33,7 +32,7 @@ public class CartController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
-            long userId = user(request).getId();
+            long userId = ControllerSupport.user(request).getId();
             long productId = Long.parseLong(request.getParameter("productId"));
             String action = request.getParameter("action");
             int quantity = Integer.parseInt(request.getParameter("quantity") == null ? "1" : request.getParameter("quantity"));
@@ -50,10 +49,6 @@ public class CartController extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             json(response, false, 0, "장바구니 처리 중 문제가 발생했습니다.");
         }
-    }
-
-    private SessionUser user(HttpServletRequest request) {
-        return (SessionUser) request.getSession().getAttribute("loginUser");
     }
 
     private void json(HttpServletResponse response, boolean success, int count, String message) throws IOException {

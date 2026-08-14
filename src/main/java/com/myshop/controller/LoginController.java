@@ -28,8 +28,8 @@ public class LoginController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String email = value(request, "email");
-        String password = rawValue(request, "password");
+        String email = ControllerSupport.value(request, "email");
+        String password = ControllerSupport.rawValue(request, "password");
         request.setAttribute("email", email);
         if (email.isEmpty() || password.isEmpty()) {
             showError(request, response, "이메일과 비밀번호를 모두 입력해 주세요.");
@@ -62,13 +62,5 @@ public class LoginController extends HttpServlet {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         request.setAttribute("error", message);
         request.getRequestDispatcher("/WEB-INF/views/auth/login.jsp").forward(request, response);
-    }
-    private String value(HttpServletRequest request, String name) {
-        String value = request.getParameter(name);
-        return value == null ? "" : value.trim();
-    }
-    private String rawValue(HttpServletRequest request, String name) {
-        String value = request.getParameter(name);
-        return value == null ? "" : value;
     }
 }

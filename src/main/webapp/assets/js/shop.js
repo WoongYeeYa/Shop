@@ -1,14 +1,17 @@
 (() => {
   'use strict';
   const count = document.querySelector('#bag-count');
+  const bag = document.querySelector('.bag');
   const purchaseForm = document.querySelector('.purchase-form');
   const toast = document.querySelector('.toast');
-  if (!purchaseForm) return;
-  if (purchaseForm.dataset.auth === 'true') {
-    fetch(purchaseForm.dataset.api).then(response => response.json()).then(result => {
+  const auth = purchaseForm?.dataset.auth ?? bag?.dataset.auth;
+  const api = purchaseForm?.dataset.api ?? bag?.dataset.api;
+  if (auth === 'true' && api) {
+    fetch(api).then(response => response.json()).then(result => {
       if (result.success && count) count.textContent = String(result.count);
     }).catch(() => {});
   }
+  if (!purchaseForm) return;
   purchaseForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (purchaseForm.dataset.auth !== 'true') {

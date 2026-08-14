@@ -17,6 +17,11 @@
     SELECT id, sku, name, description, price, stock, category, image_url, featured
     FROM products WHERE id = #{id} AND active = TRUE
   </select>
+  <select id="findActiveByIdForUpdate" resultType="Product">
+    SELECT id, sku, name, description, price, stock, category, image_url, featured
+    FROM products WHERE id = #{id} AND active = TRUE
+    FOR UPDATE
+  </select>
   <select id="findCategories" resultType="string">
     SELECT DISTINCT category FROM products WHERE active = TRUE ORDER BY category
   </select>

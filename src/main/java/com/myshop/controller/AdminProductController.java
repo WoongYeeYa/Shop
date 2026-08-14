@@ -1,11 +1,135 @@
 package com.myshop.controller;
-import com.myshop.domain.Product;import com.myshop.service.ProductService;import com.myshop.service.impl.ProductServiceImpl;import java.io.IOException;import java.math.BigDecimal;import javax.servlet.*;import javax.servlet.annotation.WebServlet;import javax.servlet.http.*;
-@WebServlet(name="adminProductController",urlPatterns={"/admin/products","/admin/product"})
-public class AdminProductController extends HttpServlet{
- private final ProductService service=new ProductServiceImpl();
- protected void doGet(HttpServletRequest req,HttpServletResponse res)throws ServletException,IOException{if(req.getServletPath().equals("/admin/product")){String raw=req.getParameter("id");if(raw!=null&&!raw.isEmpty())try{Product p=service.getAdmin(Long.parseLong(raw));if(p==null){res.sendError(404);return;}req.setAttribute("product",p);}catch(NumberFormatException e){res.sendError(400);return;}req.getRequestDispatcher("/WEB-INF/views/admin/product-form.jsp").forward(req,res);}else{req.setAttribute("products",service.getAllAdmin());req.getRequestDispatcher("/WEB-INF/views/admin/products.jsp").forward(req,res);}}
- protected void doPost(HttpServletRequest req,HttpServletResponse res)throws ServletException,IOException{String action=req.getParameter("action");try{if("delete".equals(action)){service.delete(Long.parseLong(req.getParameter("id")));}else{Product p=read(req);service.save(p);}res.sendRedirect(req.getContextPath()+"/admin/products");}catch(IllegalArgumentException e){res.setStatus(400);req.setAttribute("error",e.getMessage());req.setAttribute("product",readSafely(req));req.getRequestDispatcher("/WEB-INF/views/admin/product-form.jsp").forward(req,res);}catch(RuntimeException e){getServletContext().log("Admin product operation failed",e);res.sendError(500);}}
- private Product read(HttpServletRequest r){Product p=new Product();String id=r.getParameter("id");if(id!=null&&!id.isEmpty())p.setId(Long.valueOf(id));p.setSku(required(r,"sku",40));p.setName(required(r,"name",120));p.setDescription(required(r,"description",5000));p.setCategory(required(r,"category",50));p.setImageUrl(required(r,"imageUrl",500));try{p.setPrice(new BigDecimal(r.getParameter("price")));p.setStock(Integer.parseInt(r.getParameter("stock")));}catch(Exception e){throw new IllegalArgumentException("가격과 재고를 올바르게 입력해 주세요.");}if(p.getPrice().signum()<0||p.getStock()<0)throw new IllegalArgumentException("가격과 재고는 0 이상이어야 합니다.");p.setFeatured("true".equals(r.getParameter("featured")));p.setActive(true);return p;}
- private Product readSafely(HttpServletRequest r){try{return read(r);}catch(Exception e){return new Product();}}
- private String required(HttpServletRequest r,String n,int max){String v=r.getParameter(n);if(v==null||v.trim().isEmpty()||v.trim().length()>max)throw new IllegalArgumentException("필수 항목과 입력 길이를 확인해 주세요.");return v.trim();}
+
+import com.myshop.domain.Product;
+import com.myshop.service.ProductService;
+import com.myshop.service.impl.ProductServiceImpl;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.net.URI;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+@WebServlet(name = "adminProductController", urlPatterns = {"/admin/products", "/admin/product"})
+public class AdminProductController extends HttpServlet {
+    private final ProductService service = new ProductServiceImpl();
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        if ("/admin/product".equals(request.getServletPath())) {
+            String rawId = request.getParameter("id");
+            if (rawId != null && !rawId.isEmpty()) {
+                try {
+                    Product product = service.getAdmin(Long.parseLong(rawId));
+                    if (product == null) {
+                        response.sendError(HttpServletResponse.SC_NOT_FOUND);
+                        return;
+                    }
+                    request.setAttribute("product", product);
+                } catch (NumberFormatException exception) {
+                    response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+                    return;
+                }
+            }
+            request.getRequestDispatcher("/WEB-INF/views/admin/product-form.jsp").forward(request, response);
+            return;
+        }
+        request.setAttribute("products", service.getAllAdmin());
+        request.getRequestDispatcher("/WEB-INF/views/admin/products.jsp").forward(request, response);
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        try {
+            if ("delete".equals(request.getParameter("action"))) {
+                service.delete(Long.parseLong(request.getParameter("id")));
+            } else {
+                service.save(read(request));
+            }
+            response.sendRedirect(request.getContextPath() + "/admin/products");
+        } catch (IllegalArgumentException exception) {
+            if ("delete".equals(request.getParameter("action"))) {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, exception.getMessage());
+                return;
+            }
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            request.setAttribute("error", exception.getMessage());
+            request.setAttribute("product", readSafely(request));
+            request.getRequestDispatcher("/WEB-INF/views/admin/product-form.jsp").forward(request, response);
+        } catch (RuntimeException exception) {
+            getServletContext().log("Admin product operation failed", exception);
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private Product read(HttpServletRequest request) {
+        Product product = new Product();
+        String id = request.getParameter("id");
+        if (id != null && !id.isEmpty()) product.setId(Long.valueOf(id));
+        product.setSku(required(request, "sku", 40));
+        product.setName(required(request, "name", 120));
+        product.setDescription(required(request, "description", 5000));
+        product.setCategory(required(request, "category", 50));
+        product.setImageUrl(validImageUrl(required(request, "imageUrl", 500)));
+        try {
+            product.setPrice(new BigDecimal(request.getParameter("price")));
+            product.setStock(Integer.parseInt(request.getParameter("stock")));
+        } catch (NumberFormatException | NullPointerException exception) {
+            throw new IllegalArgumentException("가격과 재고를 올바르게 입력해 주세요.");
+        }
+        if (product.getPrice().signum() < 0 || product.getStock() < 0) {
+            throw new IllegalArgumentException("가격과 재고는 0 이상이어야 합니다.");
+        }
+        product.setFeatured("true".equals(request.getParameter("featured")));
+        product.setActive(true);
+        return product;
+    }
+
+    private Product readSafely(HttpServletRequest request) {
+        Product product = new Product();
+        try {
+            product.setId(Long.valueOf(ControllerSupport.rawValue(request, "id")));
+        } catch (NumberFormatException ignored) {
+            // Leave a missing or malformed id unset so the form can still render.
+        }
+        product.setSku(ControllerSupport.value(request, "sku"));
+        product.setName(ControllerSupport.value(request, "name"));
+        product.setDescription(ControllerSupport.value(request, "description"));
+        product.setCategory(ControllerSupport.value(request, "category"));
+        product.setImageUrl(ControllerSupport.value(request, "imageUrl"));
+        try {
+            product.setPrice(new BigDecimal(ControllerSupport.rawValue(request, "price")));
+        } catch (NumberFormatException ignored) {
+            // Invalid values remain empty/default and are explained by the form error.
+        }
+        try {
+            product.setStock(Integer.parseInt(ControllerSupport.rawValue(request, "stock")));
+        } catch (NumberFormatException ignored) {
+            // Invalid values remain empty/default and are explained by the form error.
+        }
+        product.setFeatured("true".equals(request.getParameter("featured")));
+        return product;
+    }
+
+    private String required(HttpServletRequest request, String name, int maxLength) {
+        String value = ControllerSupport.value(request, name);
+        if (value.isEmpty() || value.length() > maxLength) {
+            throw new IllegalArgumentException("필수 항목과 입력 길이를 확인해 주세요.");
+        }
+        return value;
+    }
+
+    private String validImageUrl(String value) {
+        try {
+            String scheme = URI.create(value).getScheme();
+            if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) return value;
+        } catch (IllegalArgumentException ignored) {
+            // Use the same validation message for malformed and unsupported URLs.
+        }
+        throw new IllegalArgumentException("이미지 주소는 http 또는 https URL이어야 합니다.");
+    }
 }

@@ -23,14 +23,16 @@ public class CartServiceImpl implements CartService {
         if (quantity < 1 || quantity > 99) throw new IllegalArgumentException("수량은 1개 이상 99개 이하여야 합니다.");
         try (SqlSession session = MyBatisProvider.getFactory().openSession(false)) {
             CartMapper cart = session.getMapper(CartMapper.class);
+            Product product = session.getMapper(ProductMapper.class).findActiveByIdForUpdate(productId);
             List<CartLine> lines = cart.findByUserForUpdate(userId);
-            Product product = session.getMapper(ProductMapper.class).findActiveById(productId);
             int current = 0;
             for (CartLine line : lines) if (line.getProductId() == productId) current = line.getQuantity();
             if (product == null || current + quantity > product.getStock() || current + quantity > 99) {
                 throw new IllegalArgumentException("상품 재고가 부족합니다.");
             }
-            cart.upsert(userId, productId, quantity);
+            if (cart.upsert(userId, productId, quantity) < 1) {
+                throw new IllegalStateException("장바구니에 상품을 추가하지 못했습니다.");
+            }
             session.commit();
         }
     }
@@ -40,12 +42,14 @@ public class CartServiceImpl implements CartService {
         if (quantity < 1) { remove(userId, productId); return; }
         try (SqlSession session = MyBatisProvider.getFactory().openSession(false)) {
             CartMapper cart = session.getMapper(CartMapper.class);
+            Product product = session.getMapper(ProductMapper.class).findActiveByIdForUpdate(productId);
             cart.findByUserForUpdate(userId);
-            Product product = session.getMapper(ProductMapper.class).findActiveById(productId);
             if (product == null || product.getStock() < quantity || quantity > 99) {
                 throw new IllegalArgumentException("선택한 수량만큼 재고가 없습니다.");
             }
-            cart.update(userId, productId, quantity);
+            if (cart.update(userId, productId, quantity) != 1) {
+                throw new IllegalArgumentException("장바구니에 없는 상품입니다.");
+            }
             session.commit();
         }
     }

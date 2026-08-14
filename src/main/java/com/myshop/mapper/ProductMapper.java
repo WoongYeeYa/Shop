@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Param;
 public interface ProductMapper {
     List<Product> findActive(@Param("keyword") String keyword, @Param("category") String category);
     Product findActiveById(@Param("id") long id);
+    Product findActiveByIdForUpdate(@Param("id") long id);
     List<String> findCategories();
     List<Product> findAllAdmin();
     Product findByIdAdmin(@Param("id") long id);
