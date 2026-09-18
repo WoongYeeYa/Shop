@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myshop.mapper.SupportMapper">
+  <select id="lockUser" resultType="long">SELECT id FROM users WHERE id=#{id} FOR UPDATE</select>
+  <select id="countRecent" resultType="int">SELECT COUNT(*) FROM inquiries WHERE user_id=#{userId} AND created_at &gt;= #{since}</select>
+  <insert id="insertInquiry" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO inquiries(user_id,product_id,order_id,category,title,body,ai_state)
+    VALUES(#{userId},#{productId},#{orderId},#{category},#{title},#{body},#{aiState})
+  </insert>
+  <sql id="joined">SELECT i.*,p.name AS product_name,o.order_number FROM inquiries i LEFT JOIN products p ON p.id=i.product_id LEFT JOIN orders o ON o.id=i.order_id</sql>
+  <select id="find" resultType="Inquiry"><include refid="joined"/> WHERE i.id=#{id}<if test="userId != null"> AND i.user_id=#{userId}</if></select>
+  <select id="list" resultType="Inquiry">
+    <include refid="joined"/><where><if test="userId != null">i.user_id=#{userId}</if><if test="status != null">AND i.status=#{status}</if></where>
+    ORDER BY i.created_at DESC,i.id DESC LIMIT 20 OFFSET #{offset}
+  </select>
+  <select id="ownedOrder" resultType="OrderSummary">SELECT id,order_number,status,total_amount,created_at FROM orders WHERE id=#{id} AND user_id=#{userId}</select>
+  <select id="orderHasProduct" resultType="int">SELECT COUNT(*) FROM order_items WHERE order_id=#{orderId} AND product_id=#{productId}</select>
+  <select id="orderItems" resultType="string">SELECT GROUP_CONCAT(CONCAT(product_name,' × ',quantity) SEPARATOR ', ') FROM order_items WHERE order_id=#{orderId}</select>
+  <update id="publish">
+    UPDATE inquiries SET answer=#{answer},status='ANSWERED',answered_by=#{adminId},answered_at=CURRENT_TIMESTAMP,
+    version=version+1,ai_token=NULL,ai_state=CASE WHEN ai_state='RUNNING' THEN 'CANCELLED' ELSE ai_state END
+    WHERE id=#{id} AND version=#{version}
+  </update>
+  <update id="claim">
+    UPDATE inquiries SET ai_state='RUNNING',ai_token=#{token},ai_started_at=CURRENT_TIMESTAMP
+    WHERE id=#{id} AND status='OPEN'
+    AND (ai_started_at IS NULL OR ai_started_at &lt; #{cooldown})
+    AND (ai_state &lt;&gt; 'RUNNING' OR ai_started_at &lt; #{expired})
+  </update>
+  <update id="finish">
+    UPDATE inquiries SET ai_state=#{run.state},draft=#{run.draft},needs_review=#{run.needsReview},review_reason=#{run.reason},ai_token=NULL
+    WHERE id=#{id} AND ai_token=#{token} AND status='OPEN'
+  </update>
+  <update id="failClaim">UPDATE inquiries SET ai_state='FAILED',ai_token=NULL WHERE id=#{id} AND ai_token=#{token}</update>
+  <select id="runCount" resultType="int">SELECT COUNT(*) FROM inquiry_ai_runs WHERE inquiry_id=#{id}</select>
+  <insert id="insertRun">
+    INSERT INTO inquiry_ai_runs(inquiry_id,state,model,prompt_version,draft,needs_review,reason,sources,citations,elapsed_ms,input_tokens,output_tokens)
+    VALUES(#{inquiryId},#{state},#{model},#{promptVersion},#{draft},#{needsReview},#{reason},#{sources},#{citations},#{elapsedMs},#{inputTokens},#{outputTokens})
+  </insert>
+  <select id="runs" resultType="AiRun">SELECT * FROM inquiry_ai_runs WHERE inquiry_id=#{id} ORDER BY id DESC LIMIT 20</select>
+  <select id="policies" resultType="SupportPolicy">SELECT * FROM support_policies <if test="activeOnly">WHERE active=TRUE</if> ORDER BY id</select>
+  <insert id="insertPolicy" useGeneratedKeys="true" keyProperty="id">INSERT INTO support_policies(title,content,active) VALUES(#{title},#{content},#{active})</insert>
+  <update id="updatePolicy">UPDATE support_policies SET title=#{title},content=#{content},active=#{active},version=version+1,updated_at=CURRENT_TIMESTAMP WHERE id=#{id} AND version=#{version}</update>
+</mapper>

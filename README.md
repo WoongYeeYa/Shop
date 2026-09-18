@@ -11,11 +11,13 @@ JSP/Servlet MVC와 순수 JavaScript를 함께 보여 주는 포트폴리오용 
 - MySQL 장바구니와 fetch 기반 수량 동기화
 - 재고 잠금, 주문 스냅샷, 모의 결제 트랜잭션
 - 관리자 상품 등록/수정/소프트 삭제
+- 상품·본인 주문 문의, 관리자 답변 승인, 정책 관리
+- 선택적 AI 답변 초안과 근거·생성 이력, 장애 시 수동 처리
 - 프로젝트 진행 중 계속 갱신할 설계/개발/UI 가이드
 
 ## 빠른 시작
 
-필요 도구: JDK 17, Maven 3.9+, MySQL 8, Tomcat 9
+필요 도구: JDK 25 이상, Maven 3.9+, MySQL 8, Tomcat 9
 
 1. `docs/SETUP.md`에 따라 DB와 환경 변수를 준비합니다.
 2. Windows에서는 `scripts\build.cmd`, 그 외 환경에서는 `mvn clean package`를 실행합니다.
@@ -53,6 +55,7 @@ Docker 볼륨의 모든 쇼핑몰 데이터를 삭제합니다.
 - [UI 가이드](docs/UI_GUIDE.md)
 - [환경 설정](docs/SETUP.md)
 - [로드맵](docs/ROADMAP.md)
+- [AI 고객 문의 설정·설계·검증](docs/AI_SUPPORT.md)
 
 기능을 추가할 때 관련 문서와 `docs/ROADMAP.md`의 완료 조건도 함께 갱신합니다.
 

@@ -65,3 +65,54 @@ INSERT INTO products (sku, name, description, price, stock, category, image_url,
 ('KITCHEN-001', '선데이 머그 세트', '매일 손이 가는 차분한 질감의 머그 두 개', 42000, 32, '주방', 'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&w=900&q=80', TRUE),
 ('STATIONERY-001', '패브릭 기록 노트', '생각을 가볍게 붙잡아 두는 패브릭 노트', 18000, 50, '문구', 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=900&q=80', FALSE)
 ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description), category = VALUES(category);
+
+CREATE TABLE IF NOT EXISTS support_policies (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(120) NOT NULL,
+  content TEXT NOT NULL,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  version INT NOT NULL DEFAULT 0,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS inquiries (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  product_id INT NULL,
+  order_id INT NULL,
+  category VARCHAR(20) NOT NULL,
+  title VARCHAR(120) NOT NULL,
+  body TEXT NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'OPEN',
+  answer TEXT NULL,
+  answered_by INT NULL,
+  answered_at TIMESTAMP NULL,
+  version INT NOT NULL DEFAULT 0,
+  ai_state VARCHAR(20) NOT NULL DEFAULT 'DISABLED',
+  ai_token VARCHAR(36) NULL,
+  ai_started_at TIMESTAMP NULL,
+  draft TEXT NULL,
+  needs_review BOOLEAN NOT NULL DEFAULT TRUE,
+  review_reason VARCHAR(1000) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_inquiry_user FOREIGN KEY (user_id) REFERENCES users(id),
+  CONSTRAINT fk_inquiry_product FOREIGN KEY (product_id) REFERENCES products(id),
+  CONSTRAINT fk_inquiry_order FOREIGN KEY (order_id) REFERENCES orders(id),
+  CONSTRAINT fk_inquiry_admin FOREIGN KEY (answered_by) REFERENCES users(id)
+);
+CREATE TABLE IF NOT EXISTS inquiry_ai_runs (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  inquiry_id BIGINT NOT NULL,
+  state VARCHAR(20) NOT NULL,
+  model VARCHAR(100) NOT NULL,
+  prompt_version VARCHAR(30) NOT NULL,
+  draft TEXT NULL,
+  needs_review BOOLEAN NOT NULL DEFAULT TRUE,
+  reason VARCHAR(1000) NULL,
+  sources MEDIUMTEXT NOT NULL,
+  citations TEXT NOT NULL,
+  elapsed_ms BIGINT NOT NULL,
+  input_tokens INT NOT NULL DEFAULT 0,
+  output_tokens INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_run_inquiry FOREIGN KEY (inquiry_id) REFERENCES inquiries(id)
+);

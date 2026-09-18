@@ -9,6 +9,7 @@ services:
       MYSQL_USER: myshop
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-myshop-local-password}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-local-password}
+      MYSQL_ROOT_HOST: "%"
       TZ: Asia/Seoul
     command:
       - --character-set-server=utf8mb4
@@ -32,6 +33,9 @@ services:
     restart: unless-stopped
     environment:
       DB_URL: jdbc:mysql://db:3306/my_shop?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      AI_ENABLED: ${AI_ENABLED:-false}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1-mini}
       DB_USERNAME: myshop
       DB_PASSWORD: ${MYSQL_PASSWORD:-myshop-local-password}
       TZ: Asia/Seoul

@@ -1,4 +1,4 @@
-FROM maven:3.9-eclipse-temurin-17 AS build
+FROM maven:3.9-eclipse-temurin-25 AS build
 WORKDIR /workspace
 
 COPY pom.xml ./
@@ -7,7 +7,7 @@ RUN mvn -B dependency:go-offline
 COPY src ./src
 RUN mvn -B clean package
 
-FROM tomcat:9.0-jre17-temurin
+FROM tomcat:9.0-jre25-temurin
 RUN rm -rf /usr/local/tomcat/webapps/*
 COPY --from=build /workspace/target/my-shop.war /usr/local/tomcat/webapps/my-shop.war
 

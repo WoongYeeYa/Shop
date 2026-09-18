@@ -4,6 +4,7 @@
   <settings><setting name="mapUnderscoreToCamelCase" value="true"/></settings>
   <typeAliases><package name="com.myshop.domain"/></typeAliases>
   <mappers>
+    <mapper resource="mapper/SupportMapper.xml"/>
     <mapper resource="mapper/ProductMapper.xml"/>
     <mapper resource="mapper/UserMapper.xml"/>
     <mapper resource="mapper/CartMapper.xml"/>

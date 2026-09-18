@@ -2,12 +2,12 @@
 
 ## 필수 도구
 
-- JDK 17 (`JAVA_HOME` 설정)
+- JDK 25 이상 (`JAVA_HOME` 설정)
 - Maven 3.9 이상
 - MySQL 8
 - Tomcat 9
 
-프로젝트는 Java 17로 컴파일한다. 저장소의 `.tools`에 휴대용 JDK/Maven이 있으면 빌드 스크립트가 이를 우선 사용하고, 없으면 PATH에 설정된 도구를 사용한다.
+프로젝트는 Java 25로 컴파일한다. 저장소의 `.tools`에 휴대용 JDK/Maven이 있으면 빌드 스크립트가 이를 우선 사용하고, 없으면 PATH에 설정된 도구를 사용한다.
 
 ## DB 준비
 
