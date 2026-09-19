@@ -49,6 +49,8 @@ class SupportWebTest {
         ctx.addServletContainerInitializer(new JasperInitializer(),null);
         Tomcat.addServlet(ctx,"default",new DefaultServlet()).setLoadOnStartup(1);ctx.addServletMappingDecoded("/","default");
         Tomcat.addServlet(ctx,"jsp",new JspServlet()).setLoadOnStartup(1);ctx.addServletMappingDecoded("*.jsp","jsp");
+        Tomcat.addServlet(ctx,"support-status",new com.myshop.controller.SupportStatusController());
+        ctx.addServletMappingDecoded("/admin/inquiry/status","support-status");
         Tomcat.addServlet(ctx,"support",new SupportController());
         for(String path:List.of("/account/inquiries","/account/inquiry","/account/inquiry/new","/admin/inquiries","/admin/inquiry","/admin/support/policies")) ctx.addServletMappingDecoded(path,"support");
         Tomcat.addServlet(ctx,"test-session",new HttpServlet(){
@@ -91,7 +93,7 @@ class SupportWebTest {
     }
     @Test void customerAndAdminCanCompleteTheRenderedWorkflow() throws Exception {
         HttpClient customer=client(1),admin=client(3),other=client(2);
-        var form=get(customer,"/account/inquiry/new?productId=1");assertEquals(200,form.statusCode(),form.body());
+        var form=get(customer,"/account/inquiry/new?productId=1");assertEquals(200,form.statusCode(),form.body());assertTrue(form.body().contains("무엇이 궁금하세요?"),form.body());
         var created=post(customer,"/account/inquiry/new",Map.of("csrfToken",csrf(form.body()),"category","PRODUCT","productId","1","orderId","1","title","머그 문의","body","<script>alert('x')</script> 재질이 궁금합니다."));
         assertEquals(302,created.statusCode(),created.body());String location=created.headers().firstValue("location").orElseThrow().replace("/my-shop","");
         String inquiryId=location.split("id=")[1].split("&")[0];
@@ -103,12 +105,44 @@ class SupportWebTest {
         assertEquals(302,published.statusCode(),published.body());
         assertTrue(get(customer,location).body().contains("도자기 머그입니다."));
         var list=get(admin,"/admin/inquiries?status=ANSWERED");assertEquals(200,list.statusCode(),list.body());assertTrue(list.body().contains("머그 문의"));
-        var policyForm=get(admin,"/admin/support/policies");assertEquals(200,policyForm.statusCode(),policyForm.body());
+        var policyForm=get(admin,"/admin/support/policies");assertEquals(200,policyForm.statusCode(),policyForm.body());assertTrue(policyForm.body().contains("새 정책 추가"),policyForm.body());
         var policy=post(admin,"/admin/support/policies",Map.of("csrfToken",csrf(policyForm.body()),"version","0","title","반품 문의 안내","content","담당자가 상품 상태를 확인한 후 안내합니다.","active","true"));
         assertEquals(302,policy.statusCode(),policy.body());assertTrue(get(admin,"/admin/support/policies").body().contains("반품 문의 안내"));
         assertEquals(200,get(customer,"/account/inquiries").statusCode());
         assertEquals(200,get(customer,"/assets/css/support.css").statusCode());
     }
+
+    @Test void statusEndpointIsAdminOnlyAndDoesNotCacheDrafts() throws Exception {
+        long id=service.create(SupportServiceTest.user(2,"CUSTOMER"),null,null,"OTHER","상태 조회 테스트","내용");
+        HttpClient admin=client(3);
+        var response=get(admin,"/admin/inquiry/status?id="+id);
+        assertEquals(200,response.statusCode(),response.body());
+        assertEquals("no-store",response.headers().firstValue("cache-control").orElseThrow());
+        var json=com.google.gson.JsonParser.parseString(response.body()).getAsJsonObject();
+        assertTrue(json.get("success").getAsBoolean());assertEquals("DISABLED",json.getAsJsonObject("data").get("state").getAsString());
+        assertFalse(json.getAsJsonObject("data").has("aiToken"));
+        assertEquals(403,get(client(1),"/admin/inquiry/status?id="+id).statusCode());
+        assertEquals(302,get(client(0),"/admin/inquiry/status?id="+id).statusCode());
+        assertEquals(404,get(admin,"/admin/inquiry/status?id=99999999").statusCode());
+        assertEquals(400,get(admin,"/admin/inquiry/status?id=bad").statusCode());
+    }
+    @Test void searchFiltersDashboardAndEditorRenderThroughHttp() throws Exception {
+        HttpClient admin=client(3),customer=client(2);
+        long id=service.create(SupportServiceTest.user(2,"CUSTOMER"),null,null,"OTHER","HTTP 검색 전용제목","필터 본문");
+        String keyword=URLEncoder.encode("HTTP 검색 전용제목",StandardCharsets.UTF_8);
+        var page=get(admin,"/admin/inquiries?keyword="+keyword+"&category=OTHER&sort=oldest");
+        assertEquals(200,page.statusCode(),page.body());assertTrue(page.body().contains("24시간 이상 대기"),page.body());
+        assertTrue(page.body().contains("HTTP 검색 전용제목"));assertTrue(page.body().contains("AI 확인 필요"));
+        assertEquals(400,get(admin,"/admin/inquiries?page=999999999999999999").statusCode());
+        assertEquals(400,get(admin,"/admin/inquiries?sort=notvalid").statusCode());
+        assertEquals(403,get(customer,"/account/inquiries?attention=ai").statusCode());
+        var editor=get(admin,"/admin/inquiry?id="+id);
+        assertEquals(200,editor.statusCode(),editor.body());assertTrue(editor.body().contains("data-reply-editor"));
+        assertTrue(editor.body().contains("보관한 답변 복원"));assertTrue(editor.body().contains("support-editor.js"));
+        var own=get(customer,"/account/inquiry?id="+id);
+        assertFalse(own.body().contains("data-reply-editor"));assertFalse(own.body().contains("24시간 이상 대기"));
+    }
+
     @Test void tamperedOrderAndMalformedIdAreHandled() throws Exception {
         HttpClient customer=client(1);String token=csrf(get(customer,"/account/inquiry/new").body());
         var denied=post(customer,"/account/inquiry/new",Map.of("csrfToken",token,"category","ORDER","title","주문 문의","body","배송 문의","orderId","2"));

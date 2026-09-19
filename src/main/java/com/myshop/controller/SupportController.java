@@ -24,6 +24,7 @@ public final class SupportController extends HttpServlet {
         throw new IllegalArgumentException("화면을 새로고침해 주세요.");
     }
     private void view(HttpServletRequest r,HttpServletResponse s,String name) throws ServletException,IOException {
+        s.setHeader("Cache-Control","no-store");
         r.setAttribute("adminView",admin(r));r.setAttribute("aiEnabled",service().aiEnabled());
         r.getRequestDispatcher("/WEB-INF/views/support/"+name+".jsp").forward(r,s);
     }
@@ -43,10 +44,13 @@ public final class SupportController extends HttpServlet {
         } else if(path.endsWith("/policies")) {
             r.setAttribute("policies",service().policies(user));r.setAttribute("pageTitle","상담 정책 관리");view(r,s,"policies");
         } else if(path.endsWith("/inquiries")) {
-            String raw=r.getParameter("page");int page=raw==null?1:Math.toIntExact(id(raw));
-            String status=ControllerSupport.value(r,"status");if(status.isBlank()) status=null;
-            r.setAttribute("inquiries",service().list(user,admin(r),status,page));r.setAttribute("currentPage",page);
-            r.setAttribute("statusFilter",status);r.setAttribute("pageTitle",admin(r)?"문의 관리":"내 문의");view(r,s,"list");
+            String raw=r.getParameter("page");int page=raw==null?1:Integer.parseInt(raw);
+            InquirySearch filter=new InquirySearch(r.getParameter("status"),r.getParameter("category"),r.getParameter("keyword"),
+                r.getParameter("sort"),r.getParameter("attention"),page);
+            InquiryPage result=service().search(user,admin(r),filter);
+            r.setAttribute("inquiries",result.getItems());r.setAttribute("searchPage",result);r.setAttribute("searchFilter",filter);
+            if(admin(r)) r.setAttribute("stats",service().stats(user));
+            r.setAttribute("pageTitle",admin(r)?"문의 관리":"내 문의");view(r,s,"list");
         } else {
             Inquiry q=service().get(user,id(r.getParameter("id")),admin(r));
             if(q==null){s.sendError(404);return;}
@@ -71,7 +75,7 @@ public final class SupportController extends HttpServlet {
                 if("generate".equals(action)) service().regenerate(user,inquiryId);
                 else if("publish".equals(action)) service().publish(user,inquiryId,version(r.getParameter("version")),r.getParameter("answer"));
                 else throw new IllegalArgumentException("지원하지 않는 작업입니다.");
-                s.sendRedirect(r.getContextPath()+"/admin/inquiry?id="+inquiryId+"&saved=1");
+                s.sendRedirect(r.getContextPath()+"/admin/inquiry?id="+inquiryId+"&saved=1"+("publish".equals(action)?"&published=1":""));
             } else if("/admin/support/policies".equals(path)) {
                 SupportPolicy policy=new SupportPolicy();policy.setId(optionalId(r.getParameter("id")));
                 policy.setVersion(version(r.getParameter("version")));policy.setTitle(r.getParameter("title"));policy.setContent(r.getParameter("content"));

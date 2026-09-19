@@ -10,7 +10,9 @@ public interface SupportMapper {
     int countRecent(@Param("userId") long userId, @Param("since") Timestamp since);
     int insertInquiry(Inquiry inquiry);
     Inquiry find(@Param("id") long id, @Param("userId") Long userId);
-    List<Inquiry> list(@Param("userId") Long userId, @Param("status") String status, @Param("offset") int offset);
+    List<Inquiry> search(@Param("userId") Long userId, @Param("filter") InquirySearch filter, @Param("offset") long offset);
+    long countSearch(@Param("userId") Long userId, @Param("filter") InquirySearch filter);
+    SupportStats stats(@Param("filter") InquirySearch filter);
     OrderSummary ownedOrder(@Param("id") long id, @Param("userId") long userId);
     int orderHasProduct(@Param("orderId") long orderId, @Param("productId") long productId);
     String orderItems(long orderId);

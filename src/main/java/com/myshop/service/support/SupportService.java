@@ -65,13 +65,26 @@ public final class SupportService implements AutoCloseable {
         }
     }
     public List<Inquiry> list(SessionUser actor,boolean admin,String status,int page) {
+        return search(actor,admin,new InquirySearch(status,null,null,null,null,page)).getItems();
+    }
+    public InquiryPage search(SessionUser actor,boolean admin,InquirySearch filter) {
         requireUser(actor);if(admin) requireAdmin(actor);
-        if(status!=null && !Set.of("OPEN","ANSWERED").contains(status)) throw new IllegalArgumentException("잘못된 상태입니다.");
-        if(page<1 || page>10000) throw new IllegalArgumentException("잘못된 페이지입니다.");
+        if(!admin && filter.getAttention()!=null) throw new SecurityException("관리자 전용 필터입니다.");
         try(SqlSession session=factory.openSession()) {
-            List<Inquiry> result=session.getMapper(SupportMapper.class).list(admin?null:actor.getId(),status,(page-1)*20);
+            SupportMapper mapper=session.getMapper(SupportMapper.class);
+            Long owner=admin?null:actor.getId();
+            long total=mapper.countSearch(owner,filter);
+            int totalPages=(int)Math.min(Integer.MAX_VALUE,Math.max(1,(total+19)/20));
+            int page=Math.min(filter.getPage(),totalPages);
+            List<Inquiry> result=mapper.search(owner,filter,(page-1)*20L);
             if(!admin) result.forEach(SupportService::redact);
-            return result;
+            return new InquiryPage(result,total,page,totalPages);
+        }
+    }
+    public SupportStats stats(SessionUser actor) {
+        requireAdmin(actor);
+        try(SqlSession session=factory.openSession()) {
+            return session.getMapper(SupportMapper.class).stats(new InquirySearch(null,null,null,null,null,1));
         }
     }
     private static void redact(Inquiry q) {

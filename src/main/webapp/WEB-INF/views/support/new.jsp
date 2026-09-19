@@ -1,3 +1,4 @@
+<%@ page pageEncoding="UTF-8" %>
 <%@ include file="header.jspf" %>
 <p class="eyebrow">WE'RE HERE TO HELP</p><h1>무엇이 궁금하세요?</h1><p class="muted">담당자가 내용을 확인한 후 답변해 드립니다. 답변은 내 문의에서 확인할 수 있어요.</p>
 <form method="post" class="support-panel support-form" action="${pageContext.request.contextPath}/account/inquiry/new" data-submit-lock>

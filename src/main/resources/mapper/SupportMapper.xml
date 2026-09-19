@@ -9,9 +9,42 @@
   </insert>
   <sql id="joined">SELECT i.*,p.name AS product_name,o.order_number FROM inquiries i LEFT JOIN products p ON p.id=i.product_id LEFT JOIN orders o ON o.id=i.order_id</sql>
   <select id="find" resultType="Inquiry"><include refid="joined"/> WHERE i.id=#{id}<if test="userId != null"> AND i.user_id=#{userId}</if></select>
-  <select id="list" resultType="Inquiry">
-    <include refid="joined"/><where><if test="userId != null">i.user_id=#{userId}</if><if test="status != null">AND i.status=#{status}</if></where>
-    ORDER BY i.created_at DESC,i.id DESC LIMIT 20 OFFSET #{offset}
+  <sql id="aiNeedsAttention">
+    (i.ai_state='FAILED' OR (i.ai_state='RUNNING' AND i.ai_started_at &lt; #{filter.expiredBefore})
+      OR (i.ai_state='PENDING' AND i.created_at &lt; #{filter.expiredBefore}))
+  </sql>
+  <sql id="searchWhere">
+    <where>
+      <if test="userId != null">i.user_id=#{userId}</if>
+      <if test="filter.status != null">AND i.status=#{filter.status}</if>
+      <if test="filter.category != null">AND i.category=#{filter.category}</if>
+      <if test="filter.keyword != null">
+        AND (i.title LIKE CONCAT('%',#{filter.pattern},'%') ESCAPE '='
+          OR i.body LIKE CONCAT('%',#{filter.pattern},'%') ESCAPE '='
+          OR p.name LIKE CONCAT('%',#{filter.pattern},'%') ESCAPE '='
+          OR o.order_number LIKE CONCAT('%',#{filter.pattern},'%') ESCAPE '=')
+      </if>
+      <if test="filter.attention == 'overdue'">AND i.status='OPEN' AND i.created_at &lt; #{filter.overdueBefore}</if>
+      <if test="filter.attention == 'ai'">AND i.status='OPEN' AND <include refid="aiNeedsAttention"/></if>
+      <if test="filter.attention == 'today'">AND i.status='ANSWERED' AND i.answered_at &gt;= #{filter.today}</if>
+    </where>
+  </sql>
+  <select id="countSearch" resultType="long">
+    SELECT COUNT(*) FROM inquiries i LEFT JOIN products p ON p.id=i.product_id LEFT JOIN orders o ON o.id=i.order_id
+    <include refid="searchWhere"/>
+  </select>
+  <select id="search" resultType="Inquiry">
+    <include refid="joined"/><include refid="searchWhere"/>
+    <choose><when test="filter.sort == 'oldest'">ORDER BY i.created_at ASC,i.id ASC</when>
+    <otherwise>ORDER BY i.created_at DESC,i.id DESC</otherwise></choose>
+    LIMIT 20 OFFSET #{offset}
+  </select>
+  <select id="stats" resultType="SupportStats">
+    SELECT COALESCE(SUM(CASE WHEN i.status='OPEN' THEN 1 ELSE 0 END),0) AS open_count,
+      COALESCE(SUM(CASE WHEN i.status='OPEN' AND i.created_at &lt; #{filter.overdueBefore} THEN 1 ELSE 0 END),0) AS overdue_count,
+      COALESCE(SUM(CASE WHEN i.status='OPEN' AND <include refid="aiNeedsAttention"/> THEN 1 ELSE 0 END),0) AS ai_attention_count,
+      COALESCE(SUM(CASE WHEN i.status='ANSWERED' AND i.answered_at &gt;= #{filter.today} THEN 1 ELSE 0 END),0) AS answered_today_count
+    FROM inquiries i
   </select>
   <select id="ownedOrder" resultType="OrderSummary">SELECT id,order_number,status,total_amount,created_at FROM orders WHERE id=#{id} AND user_id=#{userId}</select>
   <select id="orderHasProduct" resultType="int">SELECT COUNT(*) FROM order_items WHERE order_id=#{orderId} AND product_id=#{productId}</select>

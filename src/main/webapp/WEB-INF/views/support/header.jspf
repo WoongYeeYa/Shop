@@ -6,6 +6,7 @@
 <title><c:out value="${pageTitle}"/> | 마이샵</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/shop.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/support.css">
+<script defer src="${pageContext.request.contextPath}/assets/js/support-editor.js"></script>
 <script defer src="${pageContext.request.contextPath}/assets/js/support.js"></script>
 </head><body>
 <header class="site-header support-header">

@@ -1,3 +1,4 @@
+<%@ page pageEncoding="UTF-8" %>
 <%@ include file="header.jspf" %>
 <p class="eyebrow">KNOWLEDGE FOR CUSTOMER CARE</p><h1>상담 정책</h1><p class="muted">검토한 정책만 활성화해 주세요. 활성 정책은 다음 AI 초안 생성부터 반영됩니다.</p>
 <div class="support-notice">기존 상품 화면의 안내와 일치하도록 작성해 주세요. 정책 변경은 이미 생성된 초안에 자동 반영되지 않습니다.</div>

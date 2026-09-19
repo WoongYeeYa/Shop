@@ -102,6 +102,53 @@ class SupportServiceTest {
             assertNotEquals(results.get(0).get(),results.get(1).get());
         } finally {concurrent.shutdownNow();}
     }
+
+    @Test void searchRespectsOwnershipAndLiteralWildcardCharacters() {
+        long mine=service.create(customer,1L,1L,"PRODUCT","100%_할인=확인","검색 문자 테스트");
+        service.create(other,null,2L,"ORDER","다른 고객 비밀 문의","다른 내용");
+        InquiryPage own=service.search(customer,false,new InquirySearch(null,null,"%",null,null,1));
+        assertEquals(1,own.getTotalCount());assertEquals(mine,own.getItems().get(0).getId());
+        assertEquals(1,service.search(customer,false,new InquirySearch(null,null,"_",null,null,1)).getTotalCount());
+        assertEquals(1,service.search(customer,false,new InquirySearch(null,null,"=",null,null,1)).getTotalCount());
+        assertEquals(0,service.search(customer,false,new InquirySearch(null,null,"비밀",null,null,1)).getTotalCount());
+        assertEquals(1,service.search(admin,true,new InquirySearch(null,"ORDER","ORDER-TWO",null,null,1)).getTotalCount());
+        assertEquals(0,service.search(customer,false,new InquirySearch(null,"ORDER",null,null,null,1)).getTotalCount());
+        assertThrows(SecurityException.class,()->service.search(customer,false,new InquirySearch(null,null,null,null,"ai",1)));
+        assertThrows(SecurityException.class,()->service.stats(customer));
+        assertThrows(IllegalArgumentException.class,()->new InquirySearch(null,null,null,"id desc; DROP TABLE users",null,1));
+    }
+    @Test void paginationHasNoPhantomNextPageAndKeepsStableOrder() throws Exception {
+        for(int i=1;i<=40;i++) db.execute("INSERT INTO inquiries(user_id,category,title,body) VALUES(1,'OTHER','페이지 "+i+"','내용')");
+        InquiryPage first=service.search(customer,false,new InquirySearch(null,null,null,"oldest",null,1));
+        assertEquals(40,first.getTotalCount());assertEquals(2,first.getTotalPages());assertTrue(first.isHasNext());
+        assertEquals(1L,first.getItems().get(0).getId());
+        InquiryPage last=service.search(customer,false,new InquirySearch(null,null,null,"oldest",null,2));
+        assertFalse(last.isHasNext());assertTrue(last.isHasPrevious());assertEquals(21L,last.getItems().get(0).getId());
+        assertEquals(2,service.search(customer,false,new InquirySearch(null,null,null,null,null,900)).getPage());
+        InquiryPage empty=service.search(other,false,new InquirySearch(null,null,null,null,null,10));
+        assertEquals(0,empty.getTotalCount());assertEquals(1,empty.getPage());assertFalse(empty.isHasNext());
+    }
+    @Test void statsAndAttentionFiltersAgreeIncludingInterruptedAi() throws Exception {
+        long old=create(),failed=create(),pending=create(),running=create(),done=create();
+        db.execute("UPDATE inquiries SET created_at=TIMESTAMP '2020-01-01 00:00:00' WHERE id="+old);
+        db.execute("UPDATE inquiries SET ai_state='FAILED' WHERE id="+failed);
+        db.execute("UPDATE inquiries SET ai_state='PENDING',created_at=TIMESTAMP '2020-01-01 00:00:00' WHERE id="+pending);
+        db.execute("UPDATE inquiries SET ai_state='RUNNING',ai_started_at=TIMESTAMP '2020-01-01 00:00:00' WHERE id="+running);
+        service.publish(admin,done,0,"처리 완료");
+        SupportStats stats=service.stats(admin);
+        assertEquals(4,stats.getOpenCount());assertEquals(2,stats.getOverdueCount());
+        assertEquals(3,stats.getAiAttentionCount());assertEquals(1,stats.getAnsweredTodayCount());
+        assertEquals(stats.getOverdueCount(),service.search(admin,true,new InquirySearch(null,null,null,null,"overdue",1)).getTotalCount());
+        assertEquals(stats.getAiAttentionCount(),service.search(admin,true,new InquirySearch(null,null,null,null,"ai",1)).getTotalCount());
+        assertEquals(stats.getAnsweredTodayCount(),service.search(admin,true,new InquirySearch(null,null,null,null,"today",1)).getTotalCount());
+    }
+    @Test void emptyStatsAndInvalidSearchAreHandled() {
+        assertEquals(0,service.stats(admin).getOpenCount());assertEquals(0,service.stats(admin).getAiAttentionCount());
+        assertThrows(IllegalArgumentException.class,()->new InquirySearch(null,null,"x".repeat(101),null,null,1));
+        assertThrows(IllegalArgumentException.class,()->new InquirySearch(null,"INVALID",null,null,null,1));
+        assertThrows(IllegalArgumentException.class,()->new InquirySearch(null,null,null,null,null,0));
+    }
+
     static class FakeClient implements AiDraftClient {
         boolean enabled,fail;Runnable during=()->{};
         public boolean enabled(){return enabled;}public String model(){return "test-model";}
